@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice API Integration Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .form-container {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input {
+            width: auto;
+        }
+        .code-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .code-section pre {
+            background: #fff;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice API Integration Example</h1>
+    <p>This page demonstrates how to integrate the form submission API with your existing website.</p>
+
+    <div class="form-container">
+        <h2>Test Form</h2>
+        <form id="serviceForm">
+            <div class="form-group">
+                <label for="fullName">Full Name *</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="postcode">Postcode *</label>
+                <input type="text" id="postcode" name="postcode" required placeholder="Enter your postcode">
+            </div>
+            
+            <div class="form-group">
+                <label for="serviceType">Service Type *</label>
+                <select id="serviceType" name="serviceType" required>
+                    <option value="">Please select a service</option>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electrical">Electrical</option>
+                    <option value="Heating">Heating</option>
+                    <option value="General Maintenance">General Maintenance</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="requestCallback" name="requestCallback">
+                    <label for="requestCallback">Request a callback</label>
+                </div>
+            </div>
+            
+            <button type="submit" id="submitBtn">Submit Request</button>
+        </form>
+        
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="code-section">
+        <h2>JavaScript Integration Code</h2>
+        <p>Copy this JavaScript code to integrate the API with your existing form:</p>
+        <pre><code>// Replace YOUR_API_DOMAIN with the actual domain where this API is deployed
+const API_BASE_URL = 'http://localhost:3000'; // Change this to your deployed API URL
+
+async function submitForm(formData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/submitForm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            return { success: true, message: result.message };
+        } else {
+            return { success: false, error: result.error };
+        }
+    } catch (error) {
+        return { success: false, error: 'Network error. Please try again.' };
+    }
+}
+
+// Form submission handler
+document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtn');
+    const messageDiv = document.getElementById('message');
+    
+    // Disable submit button and show loading state
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    
+    // Show loading message
+    messageDiv.className = 'message loading';
+    messageDiv.textContent = 'Submitting your request...';
+    messageDiv.style.display = 'block';
+    
+    // Get form data
+    const formData = {
+        fullName: document.getElementById('fullName').value.trim(),
+        postcode: document.getElementById('postcode').value.trim(),
+        serviceType: document.getElementById('serviceType').value,
+        requestCallback: document.getElementById('requestCallback').checked
+    };
+    
+    // Submit form
+    const result = await submitForm(formData);
+    
+    // Handle result
+    if (result.success) {
+        messageDiv.className = 'message success';
+        messageDiv.textContent = 'Thank you! Your service request has been submitted successfully.';
+        document.getElementById('serviceForm').reset();
+    } else {
+        messageDiv.className = 'message error';
+        messageDiv.textContent = `Submission failed: ${result.error}`;
+    }
+    
+    // Re-enable submit button
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Request';
+});</code></pre>
+    </div>
+
+    <div class="code-section">
+        <h2>HTML Form Structure</h2>
+        <p>Your existing form should have these field names:</p>
+        <pre><code>&lt;form id="serviceForm"&gt;
+    &lt;input type="text" id="fullName" name="fullName" required&gt;
+    &lt;input type="text" id="postcode" name="postcode" required&gt;
+    &lt;select id="serviceType" name="serviceType" required&gt;
+        &lt;option value="Plumbing"&gt;Plumbing&lt;/option&gt;
+        &lt;option value="Electrical"&gt;Electrical&lt;/option&gt;
+        &lt;!-- Add more options as needed --&gt;
+    &lt;/select&gt;
+    &lt;input type="checkbox" id="requestCallback" name="requestCallback"&gt;
+    &lt;button type="submit"&gt;Submit Request&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+    </div>
+
+    <script>
+        // Live demo JavaScript
+        const API_BASE_URL = 'http://localhost:3000';
+
+        async function submitForm(formData) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/submitForm`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    return { success: true, message: result.message };
+                } else {
+                    return { success: false, error: result.error };
+                }
+            } catch (error) {
+                return { success: false, error: 'Network error. Please try again.' };
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('serviceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            // Disable submit button and show loading state
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            // Show loading message
+            messageDiv.className = 'message loading';
+            messageDiv.textContent = 'Submitting your request...';
+            messageDiv.style.display = 'block';
+            
+            // Get form data
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                postcode: document.getElementById('postcode').value.trim(),
+                serviceType: document.getElementById('serviceType').value,
+                requestCallback: document.getElementById('requestCallback').checked
+            };
+            
+            // Submit form
+            const result = await submitForm(formData);
+            
+            // Handle result
+            if (result.success) {
+                messageDiv.className = 'message success';
+                messageDiv.textContent = 'Thank you! Your service request has been submitted successfully.';
+                document.getElementById('serviceForm').reset();
+            } else {
+                messageDiv.className = 'message error';
+                messageDiv.textContent = `Submission failed: ${result.error}`;
+            }
+            
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Request';
+        });
+    </script>
+</body>
+</html>
